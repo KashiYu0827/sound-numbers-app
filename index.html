@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音と数字の教室</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #ff6b6b;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+
+        .input-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .input-section h3 {
+            color: #4ecdc4;
+            margin-top: 0;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            border: 3px solid #4ecdc4;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 16px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #ffa726);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .note-button {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            font-size: 18px;
+            min-height: 50px;
+        }
+
+        .canvas-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        canvas {
+            border: 2px solid #4ecdc4;
+            border-radius: 10px;
+            background: white;
+        }
+
+        .info-box {
+            background: #e8f5e8;
+            border-left: 5px solid #4caf50;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        .warning {
+            color: #ff6b6b;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 音と数字の教室 🔢</h1>
+        <p class="subtitle">数字を入力して、音と波形を作ってみよう！</p>
+
+        <div class="input-section">
+            <h3>🎹 数字を入力してね</h3>
+            <textarea id="numberInput" placeholder="例: 0.5, -0.3, 0.8, -0.1, 0.2
+カンマ（,）で区切って数字を入力してね！
+数字は -1 から 1 の間で入力してください。"></textarea>
+            <div class="buttons">
+                <button onclick="generateSound()">🎵 音を作る！</button>
+                <button onclick="playSound()">▶️ 音を聞く</button>
+                <button onclick="stopSound()">⏹️ 止める</button>
+            </div>
+            <p class="warning">⚠️ 音が大きくなることがあるので、ボリュームに注意してね！</p>
+        </div>
+
+        <div class="input-section">
+            <h3>🎼 音楽の音を試してみよう</h3>
+            <div class="preset-buttons">
+                <button class="note-button" onclick="loadNote('ド')">ド</button>
+                <button class="note-button" onclick="loadNote('レ')">レ</button>
+                <button class="note-button" onclick="loadNote('ミ')">ミ</button>
+                <button class="note-button" onclick="loadNote('ファ')">ファ</button>
+                <button class="note-button" onclick="loadNote('ソ')">ソ</button>
+                <button class="note-button" onclick="loadNote('ラ')">ラ</button>
+                <button class="note-button" onclick="loadNote('シ')">シ</button>
+                <button class="note-button" onclick="loadNote('高いド')">高いド</button>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <h3>📈 波形グラフ</h3>
+            <canvas id="waveCanvas" width="700" height="300"></canvas>
+        </div>
+
+        <div class="info-box">
+            <h4>💡 どうして音が聞こえるの？</h4>
+            <p>コンピュータは音を数字の列として保存しています。プラスの数字は上向きの波、マイナスの数字は下向きの波を作ります。この波が空気を震わせて、私たちの耳に音として聞こえるんです！</p>
+        </div>
+    </div>
+
+    <script>
+        let audioContext;
+        let currentSource;
+        let currentBuffer;
+
+        function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+
+        function parseNumbers(input) {
+            return input.split(',')
+                       .map(s => parseFloat(s.trim()))
+                       .filter(n => !isNaN(n) && n >= -1 && n <= 1);
+        }
+
+        function generateSound() {
+            const input = document.getElementById('numberInput').value;
+            const numbers = parseNumbers(input);
+            
+            if (numbers.length === 0) {
+                alert('有効な数字を入力してください（-1から1の間、カンマ区切り）');
+                return;
+            }
+
+            initAudioContext();
+            
+            const sampleRate = 44100;
+            const duration = Math.max(1, numbers.length / 1000);
+            const buffer = audioContext.createBuffer(1, sampleRate * duration, sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < data.length; i++) {
+                const index = Math.floor((i / data.length) * numbers.length);
+                data[i] = numbers[index] || 0;
+            }
+            
+            currentBuffer = buffer;
+            drawWaveform(numbers);
+        }
+
+        function playSound() {
+            if (!currentBuffer) {
+                alert('まず「音を作る！」ボタンを押してください');
+                return;
+            }
+            
+            stopSound();
+            
+            currentSource = audioContext.createBufferSource();
+            currentSource.buffer = currentBuffer;
+            currentSource.connect(audioContext.destination);
+            currentSource.start();
+        }
+
+        function stopSound() {
+            if (currentSource) {
+                currentSource.stop();
+                currentSource = null;
+            }
+        }
+
+        function drawWaveform(numbers) {
+            const canvas = document.getElementById('waveCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const centerY = canvas.height / 2;
+            const stepX = canvas.width / Math.max(numbers.length - 1, 1);
+            
+            ctx.strokeStyle = '#ff6b6b';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            numbers.forEach((value, index) => {
+                const x = index * stepX;
+                const y = centerY - (value * centerY * 0.8);
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            
+            ctx.stroke();
+            
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(canvas.width, centerY);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('1.0', 5, 15);
+            ctx.fillText('0.0', 5, centerY - 5);
+            ctx.fillText('-1.0', 5, canvas.height - 5);
+        }
+
+        function generateSineWave(frequency, sampleCount = 100) {
+            const numbers = [];
+            for (let i = 0; i < sampleCount; i++) {
+                const value = Math.sin(2 * Math.PI * frequency * i / sampleCount);
+                numbers.push(Math.round(value * 1000) / 1000);
+            }
+            return numbers;
+        }
+
+        function loadNote(noteName) {
+            const frequencies = {
+                'ド': 1,
+                'レ': 9/8,
+                'ミ': 5/4,
+                'ファ': 4/3,
+                'ソ': 3/2,
+                'ラ': 5/3,
+                'シ': 15/8,
+                '高いド': 2
+            };
+            
+            const freq = frequencies[noteName];
+            const sineWave = generateSineWave(freq, 50);
+            
+            document.getElementById('numberInput').value = sineWave.join(', ');
+            generateSound();
+        }
+
+        window.addEventListener('beforeunload', () => {
+            if (audioContext) {
+                audioContext.close();
+            }
+        });
+    </script>
+</body>
+</html>
