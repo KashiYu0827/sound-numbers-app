@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>音と数字の教室</title>
+    <title>音と数字の教室 - ピアノ音波形スライダー版</title>
     <style>
         body {
             font-family: 'Comic Sans MS', cursive, sans-serif;
@@ -14,7 +14,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
@@ -49,15 +49,55 @@
             margin-top: 0;
         }
 
-        textarea {
-            width: 100%;
-            height: 100px;
-            border: 3px solid #4ecdc4;
-            border-radius: 10px;
+        .slider-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(35px, 1fr));
+            gap: 8px;
+            margin: 20px 0;
+            max-height: 200px;
+            overflow-x: auto;
             padding: 10px;
-            font-size: 16px;
-            resize: vertical;
-            box-sizing: border-box;
+            background: white;
+            border-radius: 10px;
+            border: 2px solid #4ecdc4;
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .slider-vertical {
+            writing-mode: bt-lr;
+            -webkit-appearance: slider-vertical;
+            width: 25px;
+            height: 120px;
+            background: linear-gradient(to top, #ff6b6b, #4ecdc4);
+            outline: none;
+            border-radius: 12px;
+        }
+
+        .slider-value {
+            margin-top: 8px;
+            font-weight: bold;
+            color: #4ecdc4;
+            font-size: 10px;
+            text-align: center;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .slider-count {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .buttons {
@@ -96,6 +136,25 @@
             background: linear-gradient(45deg, #4ecdc4, #44a08d);
             font-size: 18px;
             min-height: 50px;
+            position: relative;
+        }
+
+        .note-button.loading {
+            opacity: 0.6;
+        }
+
+        .note-button.loading::after {
+            content: "🎹";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
         }
 
         .canvas-container {
@@ -120,9 +179,34 @@
             border-radius: 5px;
         }
 
+        .credit-box {
+            background: #f0f8ff;
+            border-left: 5px solid #4ecdc4;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .credit-box a {
+            color: #4ecdc4;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .credit-box a:hover {
+            text-decoration: underline;
+        }
+
         .warning {
             color: #ff6b6b;
             font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .loading-message {
+            color: #4ecdc4;
+            font-style: italic;
             margin-top: 10px;
         }
     </style>
@@ -130,43 +214,62 @@
 <body>
     <div class="container">
         <h1>🎵 音と数字の教室 🔢</h1>
-        <p class="subtitle">数字を入力して、音と波形を作ってみよう！</p>
+        <p class="subtitle">ピアノ音波形スライダー版 - 本物のピアノ音を数字で見てみよう！</p>
 
         <div class="input-section">
-            <h3>🎹 数字を入力してね</h3>
-            <textarea id="numberInput" placeholder="例: 0.5, -0.3, 0.8, -0.1, 0.2
-カンマ（,）で区切って数字を入力してね！
-数字は -1 から 1 の間で入力してください。"></textarea>
+            <h3>🎹 スライダーで波を作ってみよう</h3>
+            <div id="sliderContainer" class="slider-container">
+                <!-- スライダーがここに動的に追加されます -->
+            </div>
+            <div class="controls">
+                <div class="slider-count">
+                    <label>波の数: <input type="range" id="waveCount" min="20" max="100" value="50" onchange="updateSliders()"></label>
+                    <span id="waveCountDisplay">50</span>
+                </div>
+                <div class="loading-message" id="loadingMessage" style="display: none;">
+                    🎹 ピアノ音を読み込み中...
+                </div>
+            </div>
             <div class="buttons">
-                <button onclick="generateSound()">🎵 音を作る！</button>
+                <button onclick="generateSoundFromSliders()">🎵 音を作る！</button>
                 <button onclick="playSound()">▶️ 音を聞く</button>
                 <button onclick="stopSound()">⏹️ 止める</button>
+                <button onclick="randomizeSliders()">🎲 ランダム</button>
+                <button onclick="resetSliders()">🔄 リセット</button>
+                <button onclick="showFullWaveform()">🔬 全データ表示</button>
             </div>
             <p class="warning">⚠️ 音が大きくなることがあるので、ボリュームに注意してね！</p>
         </div>
 
         <div class="input-section">
-            <h3>🎼 音楽の音を試してみよう</h3>
+            <h3>🎼 本物のピアノ音を試してみよう</h3>
+            <p>ボタンを押すと、本物のピアノ音がスライダーに表示されます！</p>
             <div class="preset-buttons">
-                <button class="note-button" onclick="loadNote('ド')">ド</button>
-                <button class="note-button" onclick="loadNote('レ')">レ</button>
-                <button class="note-button" onclick="loadNote('ミ')">ミ</button>
-                <button class="note-button" onclick="loadNote('ファ')">ファ</button>
-                <button class="note-button" onclick="loadNote('ソ')">ソ</button>
-                <button class="note-button" onclick="loadNote('ラ')">ラ</button>
-                <button class="note-button" onclick="loadNote('シ')">シ</button>
-                <button class="note-button" onclick="loadNote('高いド')">高いド</button>
+                <button class="note-button" onclick="loadPianoNote('do', 'ド')">ド</button>
+                <button class="note-button" onclick="loadPianoNote('re', 'レ')">レ</button>
+                <button class="note-button" onclick="loadPianoNote('mi', 'ミ')">ミ</button>
+                <button class="note-button" onclick="loadPianoNote('fa', 'ファ')">ファ</button>
+                <button class="note-button" onclick="loadPianoNote('so', 'ソ')">ソ</button>
+                <button class="note-button" onclick="loadPianoNote('ra', 'ラ')">ラ</button>
+                <button class="note-button" onclick="loadPianoNote('si', 'シ')">シ</button>
+                <button class="note-button" onclick="loadPianoNote('do_high', '高いド')">高いド</button>
             </div>
         </div>
 
         <div class="canvas-container">
             <h3>📈 波形グラフ</h3>
-            <canvas id="waveCanvas" width="700" height="300"></canvas>
+            <canvas id="waveCanvas" width="800" height="300"></canvas>
         </div>
 
         <div class="info-box">
             <h4>💡 どうして音が聞こえるの？</h4>
-            <p>コンピュータは音を数字の列として保存しています。プラスの数字は上向きの波、マイナスの数字は下向きの波を作ります。この波が空気を震わせて、私たちの耳に音として聞こえるんです！</p>
+            <p>コンピュータは音を数字の列として保存しています。プラスの数字は上向きの波、マイナスの数字は下向きの波を作ります。この波が空気を震わせて、私たちの耳に音として聞こえるんです！本物のピアノ音も、実はこんな数字の並びでできているんですよ！</p>
+        </div>
+
+        <div class="credit-box">
+            <h4>🎵 音源クレジット</h4>
+            <p>ピアノ音源: <a href="https://maou.audio/" target="_blank" rel="noopener">魔王魂</a></p>
+            <p>ライセンス: <a href="https://creativecommons.org/licenses/by/4.0/deed.ja" target="_blank" rel="noopener">CC BY 4.0</a></p>
         </div>
     </div>
 
@@ -174,6 +277,49 @@
         let audioContext;
         let currentSource;
         let currentBuffer;
+        let sliders = [];
+        let pianoSounds = {}; // 元のピアノ音を保存
+        let currentPianoBuffer = null; // 現在選択されているピアノ音
+        let errorLog = [];
+
+        // エラーログをファイルに保存する関数
+        function saveErrorLog(message, error = null) {
+            const timestamp = new Date().toISOString();
+            const logEntry = {
+                timestamp: timestamp,
+                message: message,
+                error: error ? error.toString() : null,
+                stack: error ? error.stack : null
+            };
+            
+            errorLog.push(logEntry);
+            console.log('ログ保存:', logEntry);
+            
+            // ログをJSON形式でダウンロード
+            const logData = JSON.stringify(errorLog, null, 2);
+            const blob = new Blob([logData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            // 自動ダウンロード用のリンクを作成
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `error_log_${Date.now()}.json`;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        // 全てのエラーをキャッチ
+        window.addEventListener('error', function(e) {
+            saveErrorLog('JavaScript Error', e.error);
+        });
+
+        // Promise rejectionもキャッチ
+        window.addEventListener('unhandledrejection', function(e) {
+            saveErrorLog('Unhandled Promise Rejection', e.reason);
+        });
 
         function initAudioContext() {
             if (!audioContext) {
@@ -184,20 +330,51 @@
             }
         }
 
-        function parseNumbers(input) {
-            return input.split(',')
-                       .map(s => parseFloat(s.trim()))
-                       .filter(n => !isNaN(n) && n >= -1 && n <= 1);
+        function updateSliders() {
+            const count = parseInt(document.getElementById('waveCount').value);
+            document.getElementById('waveCountDisplay').textContent = count;
+            
+            const container = document.getElementById('sliderContainer');
+            container.innerHTML = '';
+            sliders = [];
+
+            for (let i = 0; i < count; i++) {
+                const sliderGroup = document.createElement('div');
+                sliderGroup.className = 'slider-group';
+                
+                const slider = document.createElement('input');
+                slider.type = 'range';
+                slider.min = '-100';
+                slider.max = '100';
+                slider.value = '0';
+                slider.className = 'slider-vertical';
+                
+                const valueDisplay = document.createElement('div');
+                valueDisplay.className = 'slider-value';
+                valueDisplay.textContent = '0.0';
+                
+                slider.oninput = function() {
+                    const value = (this.value / 100).toFixed(1);
+                    valueDisplay.textContent = value;
+                    // スライダーを手動調整したらピアノ音をリセット
+                    currentPianoBuffer = null;
+                    generateSoundFromSliders();
+                };
+                
+                sliderGroup.appendChild(slider);
+                sliderGroup.appendChild(valueDisplay);
+                container.appendChild(sliderGroup);
+                sliders.push(slider);
+            }
         }
 
-        function generateSound() {
-            const input = document.getElementById('numberInput').value;
-            const numbers = parseNumbers(input);
-            
-            if (numbers.length === 0) {
-                alert('有効な数字を入力してください（-1から1の間、カンマ区切り）');
-                return;
-            }
+        function generateSoundFromSliders() {
+            const numbers = sliders.map(slider => slider.value / 100);
+            generateSoundFromNumbers(numbers);
+        }
+
+        function generateSoundFromNumbers(numbers) {
+            if (numbers.length === 0) return;
 
             initAudioContext();
             
@@ -206,27 +383,176 @@
             const buffer = audioContext.createBuffer(1, sampleRate * duration, sampleRate);
             const data = buffer.getChannelData(0);
             
+            // 数値配列を音声データに変換（補間あり）
             for (let i = 0; i < data.length; i++) {
-                const index = Math.floor((i / data.length) * numbers.length);
-                data[i] = numbers[index] || 0;
+                const position = (i / data.length) * (numbers.length - 1);
+                const index = Math.floor(position);
+                const fraction = position - index;
+                
+                const current = numbers[index] || 0;
+                const next = numbers[index + 1] || numbers[index] || 0;
+                
+                // 線形補間でスムーズな音にする + 音量を10倍に増幅
+                data[i] = (current + (next - current) * fraction) * 10.0;
             }
             
             currentBuffer = buffer;
             drawWaveform(numbers);
         }
 
+        async function loadPianoNote(noteKey, noteName) {
+            const button = event.target;
+            button.classList.add('loading');
+            
+            const loadingMsg = document.getElementById('loadingMessage');
+            loadingMsg.style.display = 'block';
+            loadingMsg.textContent = `🎹 ${noteName}の音を読み込み中...`;
+
+            try {
+                initAudioContext();
+
+                // ファイル名マッピング
+                const fileMap = {
+                    'do': 'audio/piano/maou_se_inst_piano1_1do.wav',
+                    're': 'audio/piano/maou_se_inst_piano1_2re.wav',
+                    'mi': 'audio/piano/maou_se_inst_piano1_3mi.wav',
+                    'fa': 'audio/piano/maou_se_inst_piano1_4fa.wav',
+                    'so': 'audio/piano/maou_se_inst_piano1_5so.wav',
+                    'ra': 'audio/piano/maou_se_inst_piano1_6ra.wav',
+                    'si': 'audio/piano/maou_se_inst_piano1_7si.wav',
+                    'do_high': 'audio/piano/maou_se_inst_piano1_8do.wav'
+                };
+
+                const fileName = fileMap[noteKey];
+                if (!fileName) throw new Error('音ファイルが見つかりません');
+
+                // 音声ファイルを読み込み
+                const response = await fetch(fileName);
+                if (!response.ok) throw new Error('音ファイルの読み込みに失敗しました');
+                
+                const arrayBuffer = await response.arrayBuffer();
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                
+                // 元のピアノ音を保存
+                pianoSounds[noteKey] = audioBuffer;
+                currentPianoBuffer = audioBuffer;
+                
+                // 実際のサンプル数を表示
+                const actualSampleCount = audioBuffer.length;
+                const duration = audioBuffer.duration;
+                const sampleRate = audioBuffer.sampleRate;
+                console.log(`${noteName}のピアノ音データ:`, {
+                    サンプル数: actualSampleCount,
+                    再生時間: duration + '秒',
+                    サンプリングレート: sampleRate + 'Hz',
+                    '1秒あたりの数字': sampleRate
+                });
+                
+                // アラートは削除して、コンソールログのみ
+                
+                // 音声データを数値配列に変換（表示用のみ）
+                const channelData = audioBuffer.getChannelData(0);
+                const sliderCount = sliders.length;
+                const numbers = [];
+                
+                // スライダー数に合わせてサンプリング（表示用）
+                for (let i = 0; i < sliderCount; i++) {
+                    const sampleIndex = Math.floor((i / sliderCount) * channelData.length);
+                    const value = channelData[sampleIndex] || 0;
+                    numbers.push(value);
+                }
+                
+                // スライダーに反映（表示用）
+                numbers.forEach((value, index) => {
+                    if (index < sliders.length) {
+                        // 値を-100から100の範囲にスケール
+                        const scaledValue = Math.max(-100, Math.min(100, value * 100));
+                        sliders[index].value = scaledValue;
+                        const valueDisplay = sliders[index].parentElement.querySelector('.slider-value');
+                        valueDisplay.textContent = (scaledValue / 100).toFixed(1);
+                    }
+                });
+                
+                // グラフを更新（表示用）
+                drawWaveform(numbers);
+                
+                // 音は生成しない（元音を使用するため）
+                
+                loadingMsg.textContent = `✨ ${noteName}の波形を表示しました！`;
+                setTimeout(() => {
+                    loadingMsg.style.display = 'none';
+                }, 2000);
+
+            } catch (error) {
+                const fileName = fileMap[noteKey] || 'unknown';
+                saveErrorLog(`ピアノ音読み込みエラー - ${noteName} (${fileName})`, error);
+                
+                loadingMsg.textContent = `❌ ${noteName}の読み込みに失敗しました - ${error.message}`;
+                
+                setTimeout(() => {
+                    loadingMsg.style.display = 'none';
+                }, 5000);
+            } finally {
+                button.classList.remove('loading');
+            }
+        }
+
         function playSound() {
-            if (!currentBuffer) {
-                alert('まず「音を作る！」ボタンを押してください');
+            console.log('playSound実行開始');
+            
+            // ピアノ音が選択されている場合は元音を再生
+            if (currentPianoBuffer) {
+                console.log('ピアノ音を再生:', currentPianoBuffer);
+                try {
+                    initAudioContext();
+                    stopSound();
+                    
+                    currentSource = audioContext.createBufferSource();
+                    currentSource.buffer = currentPianoBuffer;
+                    currentSource.connect(audioContext.destination);
+                    currentSource.start();
+                    
+                    console.log('ピアノ音再生完了');
+                } catch (error) {
+                    saveErrorLog('ピアノ音再生エラー', error);
+                    alert('ピアノ音再生エラー: ' + error.message);
+                }
                 return;
             }
             
-            stopSound();
+            // スライダーで作った音の場合
+            console.log('currentBuffer:', currentBuffer);
+            console.log('audioContext:', audioContext);
             
-            currentSource = audioContext.createBufferSource();
-            currentSource.buffer = currentBuffer;
-            currentSource.connect(audioContext.destination);
-            currentSource.start();
+            if (!currentBuffer) {
+                alert('まず「音を作る！」ボタンを押すか、ピアノ音を選択してください');
+                return;
+            }
+            
+            try {
+                initAudioContext();
+                console.log('AudioContext状態:', audioContext.state);
+                
+                stopSound();
+                
+                currentSource = audioContext.createBufferSource();
+                currentSource.buffer = currentBuffer;
+                
+                // ゲインノードを追加して音量を確認・調整
+                const gainNode = audioContext.createGain();
+                gainNode.gain.value = 15.0; // 音量を1500%に増幅（大きな音で）
+                
+                currentSource.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                console.log('スライダー音再生開始');
+                currentSource.start();
+                console.log('スライダー音再生コマンド完了');
+                
+            } catch (error) {
+                saveErrorLog('音声再生エラー', error);
+                alert('音声再生エラー: ' + error.message + '\nエラーログが自動ダウンロードされました');
+            }
         }
 
         function stopSound() {
@@ -234,6 +560,27 @@
                 currentSource.stop();
                 currentSource = null;
             }
+        }
+
+        function randomizeSliders() {
+            currentPianoBuffer = null; // ピアノ音をリセット
+            sliders.forEach((slider, index) => {
+                const randomValue = (Math.random() * 2 - 1) * 100;
+                slider.value = randomValue;
+                const valueDisplay = slider.parentElement.querySelector('.slider-value');
+                valueDisplay.textContent = (randomValue / 100).toFixed(1);
+            });
+            generateSoundFromSliders();
+        }
+
+        function resetSliders() {
+            currentPianoBuffer = null; // ピアノ音をリセット
+            sliders.forEach((slider, index) => {
+                slider.value = 0;
+                const valueDisplay = slider.parentElement.querySelector('.slider-value');
+                valueDisplay.textContent = '0.0';
+            });
+            generateSoundFromSliders();
         }
 
         function drawWaveform(numbers) {
@@ -246,7 +593,7 @@
             const stepX = canvas.width / Math.max(numbers.length - 1, 1);
             
             ctx.strokeStyle = '#ff6b6b';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 2;
             ctx.beginPath();
             
             numbers.forEach((value, index) => {
@@ -262,6 +609,7 @@
             
             ctx.stroke();
             
+            // 中心線
             ctx.strokeStyle = '#ccc';
             ctx.lineWidth = 1;
             ctx.beginPath();
@@ -269,6 +617,7 @@
             ctx.lineTo(canvas.width, centerY);
             ctx.stroke();
             
+            // 目盛り
             ctx.fillStyle = '#666';
             ctx.font = '12px Arial';
             ctx.textAlign = 'left';
@@ -277,39 +626,65 @@
             ctx.fillText('-1.0', 5, canvas.height - 5);
         }
 
-        function generateSineWave(frequency, sampleCount = 100) {
-            const numbers = [];
-            for (let i = 0; i < sampleCount; i++) {
-                const value = Math.sin(2 * Math.PI * frequency * i / sampleCount);
-                numbers.push(Math.round(value * 1000) / 1000);
+        function showFullWaveform() {
+            if (!currentPianoBuffer) {
+                alert('まずピアノ音を選択してください');
+                return;
             }
-            return numbers;
+            
+            const actualSampleCount = currentPianoBuffer.length;
+            const maxSliders = 5000; // 現実的な上限
+            
+            if (actualSampleCount > maxSliders) {
+                const result = confirm(
+                    `🎹 実際の数字は${actualSampleCount.toLocaleString()}個ですが、\n` +
+                    `ブラウザの性能上、${maxSliders.toLocaleString()}個まで表示可能です。\n\n` +
+                    `${maxSliders.toLocaleString()}個のスライダーで表示しますか？\n` +
+                    `（ページが重くなる可能性があります）`
+                );
+                
+                if (result) {
+                    document.getElementById('waveCount').max = maxSliders;
+                    document.getElementById('waveCount').value = maxSliders;
+                    updateSliders();
+                    // ピアノ音を再読み込みして新しいスライダー数に反映
+                    if (currentPianoBuffer) {
+                        updateSlidersFromPianoBuffer(currentPianoBuffer);
+                    }
+                }
+            } else {
+                document.getElementById('waveCount').max = actualSampleCount;
+                document.getElementById('waveCount').value = actualSampleCount;
+                updateSliders();
+                updateSlidersFromPianoBuffer(currentPianoBuffer);
+            }
         }
 
-        function loadNote(noteName) {
-            const frequencies = {
-                'ド': 1,
-                'レ': 9/8,
-                'ミ': 5/4,
-                'ファ': 4/3,
-                'ソ': 3/2,
-                'ラ': 5/3,
-                'シ': 15/8,
-                '高いド': 2
-            };
+        function updateSlidersFromPianoBuffer(audioBuffer) {
+            const channelData = audioBuffer.getChannelData(0);
+            const sliderCount = sliders.length;
             
-            const freq = frequencies[noteName];
-            const sineWave = generateSineWave(freq, 50);
+            for (let i = 0; i < sliderCount && i < channelData.length; i++) {
+                const value = channelData[i] || 0;
+                const scaledValue = Math.max(-100, Math.min(100, value * 100));
+                sliders[i].value = scaledValue;
+                const valueDisplay = sliders[i].parentElement.querySelector('.slider-value');
+                valueDisplay.textContent = (scaledValue / 100).toFixed(2);
+            }
             
-            document.getElementById('numberInput').value = sineWave.join(', ');
-            generateSound();
+            const numbers = Array.from(channelData.slice(0, sliderCount));
+            drawWaveform(numbers);
         }
+
 
         window.addEventListener('beforeunload', () => {
             if (audioContext) {
                 audioContext.close();
             }
         });
+
+        // 初期化
+        updateSliders();
     </script>
 </body>
 </html>
