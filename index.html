@@ -288,6 +288,10 @@
             <h4>🎵 音源クレジット</h4>
             <p>ピアノ音源: <a href="https://maou.audio/" target="_blank" rel="noopener">魔王魂</a></p>
             <p>ライセンス: <a href="https://creativecommons.org/licenses/by/4.0/deed.ja" target="_blank" rel="noopener">CC BY 4.0</a></p>
+            
+            <h4>📊 表示について</h4>
+            <p>波形とスライダーは見やすくするために自動で拡大表示されています。実際の音の数値はもう少し小さい値です。</p>
+            <p>拡大率は音によって異なります（通常2-4倍程度）。</p>
         </div>
     </div>
 
@@ -480,19 +484,28 @@
                     numbers.push(value);
                 }
                 
-                // スライダーに反映（表示用）
+                // 表示用に振幅を拡大（見やすくするため）
+                const maxAmplitude = Math.max(...numbers.map(Math.abs));
+                const amplificationFactor = maxAmplitude > 0 ? Math.min(4, 0.8 / maxAmplitude) : 1;
+                
+                // スライダーに反映（表示用・拡大）
                 numbers.forEach((value, index) => {
                     if (index < sliders.length) {
-                        // 値を-100から100の範囲にスケール
-                        const scaledValue = Math.max(-100, Math.min(100, value * 100));
+                        // 値を拡大してから-100から100の範囲にスケール
+                        const amplifiedValue = value * amplificationFactor;
+                        const scaledValue = Math.max(-100, Math.min(100, amplifiedValue * 100));
                         sliders[index].value = scaledValue;
                         const valueDisplay = sliders[index].parentElement.querySelector('.slider-value');
                         valueDisplay.textContent = (scaledValue / 100).toFixed(1);
                     }
                 });
                 
-                // グラフを更新（表示用）
-                drawWaveform(numbers);
+                // 拡大率をコンソールに表示
+                console.log(`波形表示拡大率: ${amplificationFactor.toFixed(1)}倍`);
+                
+                // グラフを更新（表示用・拡大）
+                const amplifiedNumbers = numbers.map(value => value * amplificationFactor);
+                drawWaveform(amplifiedNumbers);
                 
                 // 音は生成しない（元音を使用するため）
                 
