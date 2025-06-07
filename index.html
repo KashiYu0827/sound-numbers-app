@@ -81,6 +81,99 @@
             background: #44a08d;
         }
 
+        .numbers-container {
+            background: white;
+            border: 2px solid #4ecdc4;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+        }
+
+        .numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 8px;
+        }
+
+        .number-item {
+            background: #f0f8ff;
+            border: 1px solid #4ecdc4;
+            border-radius: 5px;
+            padding: 5px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .number-item.positive {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .number-item.negative {
+            background: #ffe8e8;
+            color: #c62828;
+        }
+
+        /* ユニバーサルカラー対応の数値色分け */
+        .number-item.zero {
+            background: #f5f5f5;
+            color: #333;
+            border: 2px solid #ccc;
+        }
+
+        .number-item.small-positive {
+            background: #e3f2fd;
+            color: #0d47a1;
+            border: 2px solid #2196f3;
+        }
+
+        .number-item.medium-positive {
+            background: #bbdefb;
+            color: #0d47a1;
+            border: 2px solid #1976d2;
+        }
+
+        .number-item.large-positive {
+            background: #90caf9;
+            color: #0d47a1;
+            border: 2px solid #1565c0;
+        }
+
+        .number-item.small-negative {
+            background: #fff3e0;
+            color: #e65100;
+            border: 2px solid #ff9800;
+        }
+
+        .number-item.medium-negative {
+            background: #ffe0b2;
+            color: #e65100;
+            border: 2px solid #f57c00;
+        }
+
+        .number-item.large-negative {
+            background: #ffcc80;
+            color: #e65100;
+            border: 2px solid #ef6c00;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin: 40px 0;
+        }
+
+        .display-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         .slider-group {
             display: flex;
             flex-direction: column;
@@ -233,34 +326,54 @@
 <body>
     <div class="container">
         <h1>🎵 音と数字の教室 🔢</h1>
-        <p class="subtitle">ピアノ音波形スライダー版 - 本物のピアノ音を数字で見てみよう！</p>
+        <p class="subtitle">数字で音を見てみよう - ピアノ音が数字の列でできていることを実感！</p>
 
         <div class="input-section">
-            <h3>🎹 スライダーで波を作ってみよう</h3>
-            <div id="sliderContainer" class="slider-container">
-                <!-- スライダーがここに動的に追加されます -->
+            <h3>🔢 音の数字を見てみよう</h3>
+            <p>ピアノの音を選ぶと、その音がどんな数字でできているか表示されます！</p>
+            <div style="background: #f0f8ff; padding: 10px; margin: 10px 0; border-radius: 8px; font-size: 12px;">
+                <strong>🎨 色の意味（色弱対応）:</strong><br>
+                <span style="background: #f5f5f5; color: #333; padding: 2px 6px; margin: 2px; border-radius: 3px; border: 1px solid #ccc; display: inline-block;">グレー: ゼロ</span>
+                <span style="background: #e3f2fd; color: #0d47a1; padding: 2px 6px; margin: 2px; border-radius: 3px; border: 1px solid #2196f3; display: inline-block;">薄青: 小さい＋</span>
+                <span style="background: #bbdefb; color: #0d47a1; padding: 2px 6px; margin: 2px; border-radius: 3px; border: 1px solid #1976d2; display: inline-block;">中青: 中くらい＋</span>
+                <span style="background: #90caf9; color: #0d47a1; padding: 2px 6px; margin: 2px; border-radius: 3px; border: 1px solid #1565c0; display: inline-block;">濃青: 大きい＋</span><br>
+                <span style="background: #fff3e0; color: #e65100; padding: 2px 6px; margin: 2px; border-radius: 3px; border: 1px solid #ff9800; display: inline-block;">薄橙: 小さい－</span>
+                <span style="background: #ffe0b2; color: #e65100; padding: 2px 6px; margin: 2px; border-radius: 3px; border: 1px solid #f57c00; display: inline-block;">中橙: 中くらい－</span>
+                <span style="background: #ffcc80; color: #e65100; padding: 2px 6px; margin: 2px; border-radius: 3px; border: 1px solid #ef6c00; display: inline-block;">濃橙: 大きい－</span>
             </div>
+            
+            <div id="numbersContainer" class="numbers-container">
+                <p class="no-data">👈 ピアノの音を選んでください</p>
+            </div>
+            
             <div class="controls">
-                <div class="slider-count">
-                    <label>波の数: <input type="range" id="waveCount" min="50" max="5000" value="5000" onchange="updateSliders()"></label>
-                    <span id="waveCountDisplay">5000</span>
+                <div class="display-controls">
+                    <label>表示する数字の数: 
+                        <select id="numberCount" onchange="updateDisplay()">
+                            <option value="20">20個</option>
+                            <option value="50" selected>50個</option>
+                            <option value="100">100個</option>
+                            <option value="500">500個</option>
+                            <option value="1000">1000個</option>
+                            <option value="5000">5000個</option>
+                            <option value="all">すべて表示</option>
+                        </select>
+                    </label>
                 </div>
                 <div class="loading-message" id="loadingMessage" style="display: none;">
                     🎹 ピアノ音を読み込み中...
                 </div>
             </div>
+            
             <div class="buttons">
-                <button onclick="generateSoundFromSliders()">🎵 音を作る！</button>
                 <button onclick="playSound()">▶️ 音を聞く</button>
                 <button onclick="stopSound()">⏹️ 止める</button>
-                <button onclick="randomizeSliders()">🎲 ランダム</button>
-                <button onclick="resetSliders()">🔄 リセット</button>
             </div>
             <p class="warning">⚠️ 音が大きくなることがあるので、ボリュームに注意してね！</p>
         </div>
 
         <div class="input-section">
-            <h3>🎼 本物のピアノ音を試してみよう</h3>
+            <h3>🎼 ピアノ音を試してみよう</h3>
             <p>ボタンを押すと、本物のピアノ音がスライダーに表示されます！</p>
             <div class="preset-buttons">
                 <button class="note-button" onclick="loadPianoNote('do', 'ド')">ド</button>
@@ -274,8 +387,12 @@
             </div>
         </div>
 
+
         <div class="canvas-container">
             <h3>📈 波形グラフ</h3>
+            <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                横軸：時間の流れ（左から右へ） | 縦軸：音の強さ（プラス・マイナス）
+            </p>
             <canvas id="waveCanvas" width="800" height="300"></canvas>
         </div>
 
@@ -299,9 +416,9 @@
         let audioContext;
         let currentSource;
         let currentBuffer;
-        let sliders = [];
         let pianoSounds = {}; // 元のピアノ音を保存
         let currentPianoBuffer = null; // 現在選択されているピアノ音
+        let currentNumbers = []; // 現在表示中の数字列
         let errorLog = [];
 
         // エラーログをファイルに保存する関数
@@ -333,15 +450,7 @@
             URL.revokeObjectURL(url);
         }
 
-        // 全てのエラーをキャッチ
-        window.addEventListener('error', function(e) {
-            saveErrorLog('JavaScript Error', e.error);
-        });
-
-        // Promise rejectionもキャッチ
-        window.addEventListener('unhandledrejection', function(e) {
-            saveErrorLog('Unhandled Promise Rejection', e.reason);
-        });
+        // エラーログ機能は削除（本番用）
 
         function initAudioContext() {
             if (!audioContext) {
@@ -352,75 +461,86 @@
             }
         }
 
-        function updateSliders() {
-            const count = parseInt(document.getElementById('waveCount').value);
-            document.getElementById('waveCountDisplay').textContent = count;
+        function displayNumbers(numbers) {
+            const container = document.getElementById('numbersContainer');
+            const countValue = document.getElementById('numberCount').value;
             
-            const container = document.getElementById('sliderContainer');
-            container.innerHTML = '';
-            sliders = [];
+            let displayNumbers;
+            let displayText;
+            
+            if (countValue === 'all') {
+                // すべて表示
+                displayNumbers = numbers;
+                displayText = `すべて表示中（${numbers.length.toLocaleString()}個）`;
+                
+                // 多すぎる場合は警告
+                if (numbers.length > 10000) {
+                    if (!confirm(`${numbers.length.toLocaleString()}個の数字をすべて表示しますか？\nページが重くなる可能性があります。`)) {
+                        document.getElementById('numberCount').value = '1000';
+                        updateDisplay();
+                        return;
+                    }
+                }
+            } else {
+                // 指定個数をサンプリング
+                const count = parseInt(countValue);
+                displayNumbers = [];
+                for (let i = 0; i < count; i++) {
+                    const index = Math.floor((i / count) * numbers.length);
+                    displayNumbers.push(numbers[index] || 0);
+                }
+                displayText = `${count}個の数字を表示中（実際の総数: ${numbers.length.toLocaleString()}個）`;
+            }
+            
+            // HTML生成
+            const gridHtml = displayNumbers.map((num, index) => {
+                const value = num.toFixed(3);
+                const absValue = Math.abs(num);
+                let className = '';
+                
+                // 数値の大きさに応じて色分け
+                if (absValue < 0.01) {
+                    className = 'zero';
+                } else if (num > 0) {
+                    if (absValue < 0.1) {
+                        className = 'small-positive';
+                    } else if (absValue < 0.3) {
+                        className = 'medium-positive';
+                    } else {
+                        className = 'large-positive';
+                    }
+                } else {
+                    if (absValue < 0.1) {
+                        className = 'small-negative';
+                    } else if (absValue < 0.3) {
+                        className = 'medium-negative';
+                    } else {
+                        className = 'large-negative';
+                    }
+                }
+                
+                return `<div class="number-item ${className}">${value}</div>`;
+            }).join('');
+            
+            container.innerHTML = `
+                <div class="numbers-grid">
+                    ${gridHtml}
+                </div>
+                <p style="text-align: center; margin-top: 15px; color: #666; font-size: 14px;">
+                    ${displayText}
+                </p>
+            `;
+            
+            currentNumbers = numbers;
+        }
 
-            for (let i = 0; i < count; i++) {
-                const sliderGroup = document.createElement('div');
-                sliderGroup.className = 'slider-group';
-                
-                const slider = document.createElement('input');
-                slider.type = 'range';
-                slider.min = '-100';
-                slider.max = '100';
-                slider.value = '0';
-                slider.className = 'slider-vertical';
-                
-                const valueDisplay = document.createElement('div');
-                valueDisplay.className = 'slider-value';
-                valueDisplay.textContent = '0.0';
-                
-                slider.oninput = function() {
-                    const value = (this.value / 100).toFixed(1);
-                    valueDisplay.textContent = value;
-                    // スライダーを手動調整したらピアノ音をリセット
-                    currentPianoBuffer = null;
-                    generateSoundFromSliders();
-                };
-                
-                sliderGroup.appendChild(slider);
-                sliderGroup.appendChild(valueDisplay);
-                container.appendChild(sliderGroup);
-                sliders.push(slider);
+        function updateDisplay() {
+            if (currentNumbers.length > 0) {
+                displayNumbers(currentNumbers);
             }
         }
 
-        function generateSoundFromSliders() {
-            const numbers = sliders.map(slider => slider.value / 100);
-            generateSoundFromNumbers(numbers);
-        }
 
-        function generateSoundFromNumbers(numbers) {
-            if (numbers.length === 0) return;
-
-            initAudioContext();
-            
-            const sampleRate = 44100;
-            const duration = Math.max(1, numbers.length / 1000);
-            const buffer = audioContext.createBuffer(1, sampleRate * duration, sampleRate);
-            const data = buffer.getChannelData(0);
-            
-            // 数値配列を音声データに変換（補間あり）
-            for (let i = 0; i < data.length; i++) {
-                const position = (i / data.length) * (numbers.length - 1);
-                const index = Math.floor(position);
-                const fraction = position - index;
-                
-                const current = numbers[index] || 0;
-                const next = numbers[index + 1] || numbers[index] || 0;
-                
-                // 線形補間でスムーズな音にする + 音量を10倍に増幅
-                data[i] = (current + (next - current) * fraction) * 10.0;
-            }
-            
-            currentBuffer = buffer;
-            drawWaveform(numbers);
-        }
 
         async function loadPianoNote(noteKey, noteName) {
             const button = event.target;
@@ -472,40 +592,20 @@
                 
                 // アラートは削除して、コンソールログのみ
                 
-                // 音声データを数値配列に変換（表示用のみ）
+                // 音声データを数値配列に変換
                 const channelData = audioBuffer.getChannelData(0);
-                const sliderCount = sliders.length;
-                const numbers = [];
+                const numbers = Array.from(channelData);
                 
-                // スライダー数に合わせてサンプリング（表示用）
-                for (let i = 0; i < sliderCount; i++) {
-                    const sampleIndex = Math.floor((i / sliderCount) * channelData.length);
-                    const value = channelData[sampleIndex] || 0;
-                    numbers.push(value);
-                }
+                // 数字を表示
+                displayNumbers(numbers);
                 
-                // 表示用に振幅を拡大（見やすくするため）
-                const maxAmplitude = Math.max(...numbers.map(Math.abs));
-                const amplificationFactor = maxAmplitude > 0 ? Math.min(4, 0.8 / maxAmplitude) : 1;
+                // 実際の数字の総数を表示
+                console.log(`${noteName}の実際の数字の総数: ${numbers.length.toLocaleString()}個`);
+                console.log(`再生時間: ${audioBuffer.duration.toFixed(2)}秒`);
+                console.log(`サンプリングレート: ${audioBuffer.sampleRate.toLocaleString()}Hz`);
                 
-                // スライダーに反映（表示用・拡大）
-                numbers.forEach((value, index) => {
-                    if (index < sliders.length) {
-                        // 値を拡大してから-100から100の範囲にスケール
-                        const amplifiedValue = value * amplificationFactor;
-                        const scaledValue = Math.max(-100, Math.min(100, amplifiedValue * 100));
-                        sliders[index].value = scaledValue;
-                        const valueDisplay = sliders[index].parentElement.querySelector('.slider-value');
-                        valueDisplay.textContent = (scaledValue / 100).toFixed(1);
-                    }
-                });
-                
-                // 拡大率をコンソールに表示
-                console.log(`波形表示拡大率: ${amplificationFactor.toFixed(1)}倍`);
-                
-                // グラフを更新（表示用・拡大）
-                const amplifiedNumbers = numbers.map(value => value * amplificationFactor);
-                drawWaveform(amplifiedNumbers);
+                // グラフを更新（元の値のまま）
+                drawWaveform(numbers.slice(0, 1000)); // グラフ用に1000個まで
                 
                 // 音は生成しない（元音を使用するため）
                 
@@ -571,7 +671,7 @@
                 
                 // ゲインノードを追加して音量を確認・調整
                 const gainNode = audioContext.createGain();
-                gainNode.gain.value = 15.0; // 音量を1500%に増幅（大きな音で）
+                gainNode.gain.value = 1.0; // 音量を100%に調整（爆音防止）
                 
                 currentSource.connect(gainNode);
                 gainNode.connect(audioContext.destination);
@@ -593,26 +693,6 @@
             }
         }
 
-        function randomizeSliders() {
-            currentPianoBuffer = null; // ピアノ音をリセット
-            sliders.forEach((slider, index) => {
-                const randomValue = (Math.random() * 2 - 1) * 100;
-                slider.value = randomValue;
-                const valueDisplay = slider.parentElement.querySelector('.slider-value');
-                valueDisplay.textContent = (randomValue / 100).toFixed(1);
-            });
-            generateSoundFromSliders();
-        }
-
-        function resetSliders() {
-            currentPianoBuffer = null; // ピアノ音をリセット
-            sliders.forEach((slider, index) => {
-                slider.value = 0;
-                const valueDisplay = slider.parentElement.querySelector('.slider-value');
-                valueDisplay.textContent = '0.0';
-            });
-            generateSoundFromSliders();
-        }
 
         function drawWaveform(numbers) {
             const canvas = document.getElementById('waveCanvas');
@@ -658,21 +738,7 @@
         }
 
 
-        function updateSlidersFromPianoBuffer(audioBuffer) {
-            const channelData = audioBuffer.getChannelData(0);
-            const sliderCount = sliders.length;
-            
-            for (let i = 0; i < sliderCount && i < channelData.length; i++) {
-                const value = channelData[i] || 0;
-                const scaledValue = Math.max(-100, Math.min(100, value * 100));
-                sliders[i].value = scaledValue;
-                const valueDisplay = sliders[i].parentElement.querySelector('.slider-value');
-                valueDisplay.textContent = (scaledValue / 100).toFixed(2);
-            }
-            
-            const numbers = Array.from(channelData.slice(0, sliderCount));
-            drawWaveform(numbers);
-        }
+
 
 
         window.addEventListener('beforeunload', () => {
@@ -681,8 +747,7 @@
             }
         });
 
-        // 初期化
-        updateSliders();
+        // 初期化完了
     </script>
 </body>
 </html>
